@@ -1,68 +1,78 @@
 from OpenGL.GL import *
-from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import time
-
-color = [3]
-def delay(ms):
-    ms + time.sleep(3)
+from OpenGL.GLUT import *
+import sys
+sys.setrecursionlimit(15000)
 
 def init():
-    glClearColor(1.0,1.0,1.0,0.0)
-    glMatrixMode(GL_PROJECTION)
-    gluOrtho2D(0,640,0,480)
+    glClearColor(0.0, 0.0, 0.0, 0.0)
+    gluOrtho2D(0, 500, 0, 500)
 
-def draw_pixel(x, y):
+def setpixel(x, y, colour):
+    glColor3f(colour[0], colour[1], colour[2])
     glBegin(GL_POINTS)
-    glVertex3i(x, y, 0)
-    glEnd()
-
-def bound_it(x, y,fillColor,bc):  
-    glBegin(GL_POINTS)
-    glVertex2i(x,y)
+    glVertex2f(x, y)
     glEnd()
     glFlush()
-    if((color[0]!=bc[0] | color[1]!=bc[1] | color[2]!=bc[2])&(
-        color[0]!=fillColor[0] | color[1]!=fillColor[1] | color[2]!=fillColor[2])):
-        glColor3f(fillColor[0],fillColor[1],fillColor[2])
-        glBegin(GL_POINTS)
-        glVertex2i(x,y)
-        glEnd()
-        glFlush()
-        bound_it(x+1,y,fillColor,bc)
-        bound_it(x-2,y,fillColor,bc)
-        bound_it(x,y+2,fillColor,bc)
-        bound_it(x,y-2,fillColor,bc)
-    
+
+def boundary(x, y, border, fill):
+    colour = glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT)
+    if (colour != border).any() and (colour != fill).any():
+        setpixel(x, y, fill)
+        boundary(x+1, y, border, fill)
+        boundary(x-1, y, border, fill)
+        boundary(x, y+1, border, fill)
+        boundary(x, y-1, border, fill)
+
+def flood(x, y, bg, fill):
+    colour = glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT)
+    if (colour == bg).all() and (colour != fill).any():
+        setpixel(x, y, fill)
+        flood(x+1, y, bg, fill)
+        flood(x-1, y, bg, fill)
+        flood(x, y+1, bg, fill)
+        flood(x, y-1, bg, fill)
+
 def mouse(btn, state, x, y):
-    y = 480-y
-    bCol =[3]
-    if btn == GLUT_LEFT_BUTTON :
-        if state==GLUT_DOWN:
-            bCol.append([[1,0,0]])
-            color.append([[0,0,1]])
-            bound_it(x,y,color,bCol)
-        
-def world():
-    glLineWidth(3)
-    glPointSize(2)
+    y = 500 - y
+    if btn == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
+        fill = [1,0,0]
+        border = [1,1,1]
+        boundary(x, y, border, fill)
+    elif btn == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        fill = [0,0,1]
+        bg = glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT)
+        flood(x, y, bg, fill)
+
+def square():
+    glLineWidth(2)
     glClear(GL_COLOR_BUFFER_BIT)
-    glColor3f(1,0,0)
+    glColor3f(1.0, 1.0, 1.0)
     glBegin(GL_LINE_LOOP)
-    glVertex2i(150,100)
-    glVertex2i(300,300)
-    glVertex2i(450,100)
+    glVertex2i(10,10)
+    glVertex2i(60,10)
+    glVertex2i(60,60)
+    glVertex2i(10,60)
+    glEnd() 
+    glBegin(GL_LINE_LOOP)
+    glVertex2i(10,80)
+    glVertex2i(60,80)
+    glVertex2i(60,130)
+    glVertex2i(10,130)
     glEnd()
     glFlush()
 
-
-if __name__ == "__main__":
-    glutInit()
-    glutInitDisplayMode(GLUT_SINGLE|GLUT_RGB)
-    glutInitWindowSize(640,480)
-    glutInitWindowPosition(200,200)
-    glutCreateWindow("Many Amaze Very GL WOW")
-    glutDisplayFunc(world)
-    glutMouseFunc(mouse)
+def main():
+    print("Click left mouse button for flood filling-blue colour.")
+    print("Click right mouse button for boundary filling-red colour.")
+    glutInit(sys.argv)
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)
+    glutInitWindowSize(500, 500)
+    glutInitWindowPosition(100, 100)
+    glutCreateWindow("Seed Filling Algorithms")
     init()
+    glutDisplayFunc(square)
+    glutMouseFunc(mouse)
     glutMainLoop()
+
+main()
