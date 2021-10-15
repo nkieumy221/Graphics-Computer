@@ -70,7 +70,7 @@ if __name__ == "__main__":
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)
     glutInitWindowSize(width, height)
     glutInitWindowPosition(10, 10)
-    glutCreateWindow("Breshnam's Cricle Drawing Algorithm")
+    glutCreateWindow("Breshnam's Elipse Drawing Algorithm")
     gluOrtho2D(-width/2, height/2, -height/2, width/2)
     glutDisplayFunc(display)
     glutMouseFunc(MouseEventHandler)
